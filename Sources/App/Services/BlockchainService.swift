@@ -1,9 +1,4 @@
-//
-//  BlockchainService.swift
-//  Run
-//
-//  Created by Mohammad Azam on 12/25/17.
-//
+
 
 import Foundation
 import Vapor
@@ -24,7 +19,6 @@ class BlockchainService {
     
     func resolve(completion :@escaping (Blockchain) -> ())  {
         
-        // get the nodes
         let nodes = self.blockchain.nodes
         
         for node in nodes {

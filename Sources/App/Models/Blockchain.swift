@@ -5,30 +5,57 @@ let DIFFICULTY = "000"
 
 class Transaction :Codable {
     
-    var from :String
-    var to :String
+    var status :Int
     var amount :Double
+    var uuid: String
+    var location: String
     
-    init(from :String, to :String, amount :Double) {
-        self.from = from
-        self.to = to
+    init(status :Int, amount :Double, uuid :String, location :String) {
+        self.status = status
         self.amount = amount
+        self.uuid = uuid
+        self.location = location
     }
     
     init?(request :Request) {
         
-        guard let from = request.data["from"]?.string,
-              let to = request.data["to"]?.string,
-              let amount = request.data["amount"]?.double
+        guard let status = request.data["status"]?.int,
+            let amount = request.data["amount"]?.double,
+            let uuid = request.data["uuid"]?.string,
+            let location = request.data["location"]?.string
             else {
                 return nil
         }
-        
-        self.from = from
-        self.to = to
+    
+        self.status = status
         self.amount = amount
+        self.uuid = uuid
+        self.location = location
     }
 }
+
+
+//class RecordSmartContract : Codable {
+//
+//    func apply(transaction :Transaction, allBlocks :[Block]) {
+//
+//        allBlocks.forEach { block in
+//
+//            block.transactions.forEach { trans in
+//
+//                if trans.uuid == transaction.uuid {
+//                    transaction.amount -= trans.amount
+//                }
+//
+//                if transaction.noOfVoilations > 5 {
+//                    transaction.isDrivingLicenseSuspended = true
+//                }
+//
+//            }
+//        }
+//    }
+//
+//}
 
 class Block : Codable {
     
@@ -57,7 +84,7 @@ class Block : Codable {
     init() {
         self.dateCreated = Date().toString()
         self.nonce = 0
-        self.message = "Mined a New Block"
+        self.message = "Новый блок намайнен"
     }
     
     init(transaction :Transaction) {
@@ -89,6 +116,25 @@ class BlockchainNode :Codable {
     
 }
 
+class Status :Codable {
+    
+    var status :Int
+    
+    init(status :Int) {
+        self.status = status
+    }
+    
+    init?(request :Request) {
+        
+        guard let status = request.data["status"]?.int else {
+            return nil
+        }
+        
+        self.status = status
+    }
+    
+}
+
 class Blockchain : Codable {
     
     var blocks :[Block] = [Block]()
@@ -114,8 +160,6 @@ class Blockchain : Codable {
     func addBlock(_ block :Block) {
         
         if self.blocks.isEmpty {
-            // add the genesis block
-            // no previous has was found for the first block
             block.previousHash = "0"
             
         } else {
@@ -126,7 +170,7 @@ class Blockchain : Codable {
         
         block.hash = generateHash(for: block)
         self.blocks.append(block)
-        block.message = "Block added to the Blockchain"
+        block.message = "Блок добавлен"
     }
     
     private func getPreviousBlock() -> Block {
@@ -134,20 +178,18 @@ class Blockchain : Codable {
     }
     
     private func displayBlock(_ block :Block) {
-        print("------ Block \(block.index) ---------")
-        print("Date Created : \(block.dateCreated) ")
+        print("------ Блок \(block.index) ---------")
+        print("Дата создания : \(block.dateCreated) ")
         //print("Data : \(block.data) ")
         print("Nonce : \(block.nonce) ")
-        print("Previous Hash : \(block.previousHash!) ")
-        print("Hash : \(block.hash!) ")
+        print("Предидущий хеш : \(block.previousHash!) ")
+        print("Хеш : \(block.hash!) ")
     }
     
     private func generateHash(for block: Block) -> String {
         
         var hash = block.key.sha256()!
         
-        // setting the proof of work.
-        // In "00" is good to start since "0000" will take forever and Playground will eventually crash :)
         while(!hash.hasPrefix(DIFFICULTY)) {
             block.nonce += 1
             hash = block.key.sha256()!
@@ -155,6 +197,25 @@ class Blockchain : Codable {
         }
         
         return hash
+    }
+    
+    func transactionsBy(status :Int) -> [Transaction] {
+        
+        var transactions = [Transaction]()
+        
+        self.blocks.forEach { block in
+            
+            for transaction in block.transactions {
+                if transaction.status == status {
+                    transactions.append(transaction)
+                }
+                if transaction.status > status{
+                    transactions.removeLast()
+                    break
+                }
+            }
+        }
+        return transactions
     }
 }
 

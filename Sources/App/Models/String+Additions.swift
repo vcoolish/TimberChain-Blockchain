@@ -1,10 +1,3 @@
-//
-//  String+Additions.swift
-//  Blockchain
-//
-//  Created by Mohammad Azam on 12/21/17.
-//  Copyright © 2017 Mohammad Azam. All rights reserved.
-//
 
 import Foundation
 import CommonCrypto

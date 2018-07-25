@@ -1,10 +1,3 @@
-//
-//  BlockchainController.swift
-//  Run
-//
-//  Created by Mohammad Azam on 12/27/17.
-//
-
 import Foundation
 import Vapor
 
@@ -18,7 +11,6 @@ class BlockchainController {
         self.drop = drop
         self.blockchainService = BlockchainService() 
         
-        // setup the routes for the controller
         setupRoutes()
     }
     
@@ -38,7 +30,6 @@ class BlockchainController {
                     let blockchain = try! JSONEncoder().encode(blockchain)
                     portal.close(with: blockchain.makeResponse())
                 }
-                
             }
            
         }
@@ -61,13 +52,9 @@ class BlockchainController {
             
         }
         
-        // adding a new transaction
         self.drop.post("transaction") { request in
             
             if let transaction = Transaction(request: request) {
-                // add the transaction to the block
-                
-                // get the last mined block
                 let block = self.blockchainService.getLastBlock()
                 block.addTransaction(transaction: transaction)
                 
@@ -75,11 +62,35 @@ class BlockchainController {
                 //self.blockchainService.addBlock(block)
                 return try JSONEncoder().encode(block)
             }
-            
             return try JSONEncoder().encode(["message":"Something bad happend!"])
         }
         
-        // get the chain
+        self.drop.post("timber-records") { request in
+            
+            if let status = Status(request: request) {
+                let blockchain = self.blockchainService.getBlockchain()
+                let transactions = blockchain?.transactionsBy(status: status.status)
+                return try JSONEncoder().encode(transactions)
+            }
+            return try JSONEncoder().encode(["message":"Something bad happend!"])
+            
+        }
+        
+        self.drop.get("/timber-records/:status") { request in
+            
+            guard let status = request.parameters["status"]?.int else {
+                return try JSONEncoder().encode(["message":"Timber parameter not found!"])
+            }
+            
+            let blockchain = self.blockchainService.getBlockchain()
+            let transactions = blockchain?.transactionsBy(status: status)
+            return Response(
+                status: .ok,
+                headers: ["Content-Type": "application/json"],
+                body: try JSONEncoder().encode(transactions)
+            )
+        }
+        
         self.drop.get("blockchain") { request in
             
             if let blockchain = self.blockchainService.getBlockchain() {
@@ -88,7 +99,5 @@ class BlockchainController {
             
             return try! JSONEncoder().encode(["message":"Blockchain is not initialized. Please mine a block"])
         }
-        
     }
-    
 }
